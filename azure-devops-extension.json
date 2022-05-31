@@ -1,0 +1,84 @@
+{
+  "id": "vsts-extensions-voting-control",
+  "version": "1.0.2",
+  "name": "Voting Control Extension",
+  "description": "Allows unique per user votes against work items",
+  "publisher": "GeorgeSamartzidis",
+  "icons": {
+    "default": "img/logo.png"
+  },
+  "categories": [
+    "Azure Boards"
+  ],
+  "targets": [
+    {
+      "id": "Microsoft.VisualStudio.Services"
+    }
+  ],
+  "files": [
+    {
+      "path": "dist",
+      "packagePath": "/",
+      "addressable": true
+    }
+  ],
+  "tags": [
+    "Work Items",
+    "Extensions",
+    "Work Item Control",
+    "Votes"
+  ],
+  "content": {
+    "details": {
+      "path": "readme.md"
+    }
+  },
+  "scopes": [
+    "vso.work"
+  ],
+  "contributions": [
+    {
+      "id": "voting-form-control",
+      "type": "ms.vss-work-web.work-item-form-control",
+      "description": "A work item form control for voting against work items.",
+      "targets": [
+        "ms.vss-work-web.work-item-form"
+      ],
+      "properties": {
+        "name": "Voting control",
+        "uri": "index.html",
+        "inputs": [
+          {
+            "id": "Voters",
+            "name": "A hidden Text field to maintain list of voters",
+            "type": "WorkItemField",
+            "properties": {
+              "workItemFieldTypes": [
+                "String",
+                "PlainText"
+              ]
+            },
+            "validation": {
+              "dataType": "String",
+              "isRequired": true
+            }
+          },
+          {
+            "id": "Votes",
+            "name": "A hidden Integer field to maintain the total number of votes",
+            "type": "WorkItemField",
+            "properties": {
+              "workItemFieldTypes": [
+                "Integer"
+              ]
+            },
+            "validation": {
+              "dataType": "String",
+              "isRequired": true
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

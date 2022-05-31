@@ -1,0 +1,40 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Voting Control</title>
+    <link rel="stylesheet" href="style.css"/>
+</head>
+
+<body>
+    <script src="VSS.SDK.min.js"></script>
+    
+    <script>
+        VSS.init({
+            explicitNotifyLoaded: true,
+            usePlatformScripts: true,
+            applyTheme: true,
+        });
+        
+        // Load main entry point for extension
+        VSS.require([
+            "TFS/WorkItemTracking/Services",
+            "TFS/WorkItemTracking/ExtensionContracts",
+            "TFS/WorkItemTracking/Services",
+            "TFS/WorkItemTracking/RestClient",
+            "VSS/Utils/Core",
+            "VSS/Utils/UI",
+            "app"
+        ], function () {
+            // Loading succeeded
+            VSS.notifyLoadSucceeded();
+        });
+    </script>
+
+    <div id="container">        
+    </div>
+
+</body>
+
+</html>

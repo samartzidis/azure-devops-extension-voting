@@ -7,11 +7,8 @@
     "package:dev": "node ./scripts/packageDev",
     "package:dev:http": "node ./scripts/packageDevHttp",
     "package:release": "node ./scripts/packageRelease",
-    "publish:dev": "npm run package:dev && node ./scripts/publishDev",
     "build:dev": "npm run clean && mkdir dist && webpack --progress --color --output-path ./dist",
-    "build:release": "npm run clean && mkdir dist && webpack --progress --color --output-path ./dist --mode production",
-    "publish:release": "npm run build:release && node ./scripts/publishRelease",
-    "test": "karma start --single-run"
+    "build:release": "npm run clean && mkdir dist && webpack --progress --color --output-path ./dist --mode production"
   },
   "devDependencies": {
     "@types/applicationinsights-js": "^1.0.5",

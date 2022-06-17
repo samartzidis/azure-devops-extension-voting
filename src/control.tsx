@@ -5,34 +5,44 @@ import { WorkItemFormService } from "TFS/WorkItemTracking/Services";
 import { IconButton, DefaultButton } from "office-ui-fabric-react/lib/components/Button";
 import { Label } from 'office-ui-fabric-react/lib/Label';
 
+type Voters = [string[], string[]];
+
 initializeIcons();
 
 export class Control {
 
   public readonly fieldNameVoters = VSS.getConfiguration().witInputs.Voters;
   public readonly fieldNameVotes = VSS.getConfiguration().witInputs.Votes;
-  private readonly _container = document.getElementById("container") as HTMLElement;
+  private readonly _container = document.getElementById("container") as HTMLElement;  
 
   constructor() {  
   }
 
   public async refresh() : Promise<void> {
 
-    let upvoteTooltip : string = await this._getVotersList();
-    upvoteTooltip = `Upvote.\n\nVoters:\n${upvoteTooltip}`;
+    let voters = await this._getVoters();
+    let votes = voters[0].length - voters[1].length;
 
+    let upTooltup = `Vote Up.\n\n${voters[0].join("\n")}`
+    let downTooltup = `Vote Down.\n\n${voters[1].join("\n")}`
+    
     ReactDOM.render(
-      <div style={{ padding: "3px" }} id="wrapper" className="wrapper">
+      <div id="wrapper" className="wrapper">        
+        
         <Label>Votes</Label>
-        <Label style={{ display: "inline", fontSize: "21px" }}>{(await this._getVoters()).length}</Label>
-        <IconButton
+        <Label style={{ display: "inline", fontSize: "21px", padding: '0px 10px 0px 10px' }}>{votes}</Label>
+
+        <IconButton style={{ pointerEvents: 'all' }}
           iconProps={{ iconName: 'Like' }}
-          title={upvoteTooltip}
-          onClick={async () => { await this._onLikeClickedAsync(); }} />
-        <IconButton
+          title={upTooltup}
+          disabled={!this._canVoteUp(voters)}
+          onClick={async () => await this._onVoteUpClickedAsync()} />
+
+        <IconButton style={{ pointerEvents: 'all' }}
           iconProps={{ iconName: 'Dislike' }}
-          title='Downvote.'
-          onClick={async () => { await this._onDislikeClickedAsync(); }} />
+          title={downTooltup}
+          disabled={!this._canVoteDown(voters)}
+          onClick={async () => await this._onVoteDownClickedAsync()} />
       </div>
       ,
       this._container,
@@ -43,67 +53,86 @@ export class Control {
 
   private _resize() {
     let wrapper = document.getElementById("wrapper") as HTMLElement;
-    console.debug(wrapper.offsetHeight);
+    //console.debug(wrapper.offsetHeight);
     VSS.resize(wrapper.offsetWidth, wrapper.offsetHeight);  
   }
 
-  private async _getVoters() : Promise<string[]> {
+  private _canVoteUp(voters : Voters) : boolean {
+    let userEmail = VSS.getWebContext().user.email;
+    let index = voters[0].findIndex(t => t.toLowerCase() === userEmail.toLowerCase());
+
+    return index < 0;
+  }
+
+  private _canVoteDown(voters : Voters) : boolean {
+    let userEmail = VSS.getWebContext().user.email;
+    let index = voters[1].findIndex(t => t.toLowerCase() === userEmail.toLowerCase());
+
+    return index < 0;
+  }
+
+  private async _getVoters() : Promise<Voters> {
     const formService = await WorkItemFormService.getService();
     const value = await formService.getFieldValue(this.fieldNameVoters);
 
     if (typeof value !== "string")
-      return [];
+      return [[],[]];
 
-    return value.split(";").filter(v => !!v);
+    let values =  value.split(";").map(t => t.trim());
+    let upVoters = values.filter(t => !t.startsWith('!')).filter(v => !!v);
+    let downVoters = values.filter(t => t.startsWith('!')).map(t => t.substring(1)).filter(v => !!v);
+
+    return [upVoters, downVoters];
   }
 
-  // private async _getVotersFragment() : Promise<JSX.Element> {
-  //   let voters = await this._getVoters();
-  //   return (
-  //     <div className="App">
-  //       {voters.map(t => <div>{t}</div>)}
-  //     </div>
-  //   )
-  // }
-
-  private async _getVotersList() : Promise<string> {
-    const formService = await WorkItemFormService.getService();
-    const value = await formService.getFieldValue(this.fieldNameVoters) as string;
-    return value.replace(/\;/g, '\n');    
-  }
-
-  private async _setVoters(values: string[]) : Promise<void> {
+  private async _setVoters(voters : Voters) : Promise<void> {
     const formService = await WorkItemFormService.getService();
 
-    await formService.setFieldValue(this.fieldNameVoters, values.sort().join(";"));
+    let upVoters = voters[0].sort();
+    let downVoters = voters[1].sort().map(t => `!${t}`);
+    let votersString = upVoters.concat(downVoters).join(";");    
+
+    await formService.setFieldValue(this.fieldNameVoters, votersString);
+
+    let votes = voters[0].length - voters[1].length;
+    await formService.setFieldValue(this.fieldNameVotes, votes);
   }
 
-  private async _setVotes(value : number) {
-    const formService = await WorkItemFormService.getService();
-    await formService.setFieldValue(this.fieldNameVotes, value);
-  }
-
-  private async _onLikeClickedAsync() : Promise<void> {
-
+  private async _onVoteUpClickedAsync() : Promise<void> {
     let userEmail = VSS.getWebContext().user.email;
     let voters = await this._getVoters();
-    let index = voters.findIndex(t => t.toLowerCase() === userEmail.toLowerCase());
-    if (index < 0) {
-      voters.push(userEmail);
-      await this._setVoters(voters);
-      await this._setVotes(voters.length);
-    }
+
+    let upVoters = voters[0];
+    let downVoters = voters[1];
+    let indexUpVoters = upVoters.findIndex(t => t.toLowerCase() === userEmail.toLowerCase());
+    let indexDownVoters = downVoters.findIndex(t => t.toLowerCase() === userEmail.toLowerCase());
+
+    if (indexDownVoters >= 0)
+      downVoters.splice(indexDownVoters, 1);
+    else if (indexUpVoters < 0)
+      upVoters.push(userEmail);
+    else
+      return;
+
+    await this._setVoters([upVoters, downVoters]);
   }
 
-  private async _onDislikeClickedAsync() : Promise<void> {
-
+  private async _onVoteDownClickedAsync() : Promise<void> {
     let userEmail = VSS.getWebContext().user.email;
     let voters = await this._getVoters(); 
-    let index = voters.findIndex(t => t.toLowerCase() === userEmail.toLowerCase());
-    if (index > -1) {
-      voters.splice(index, 1);    
-      await this._setVoters(voters);  
-      await this._setVotes(voters.length);
-    }
+
+    let upVoters = voters[0];
+    let downVoters = voters[1];
+    let indexUpVoters = upVoters.findIndex(t => t.toLowerCase() === userEmail.toLowerCase());
+    let indexDownVoters = downVoters.findIndex(t => t.toLowerCase() === userEmail.toLowerCase());
+
+    if (indexUpVoters >= 0)
+      upVoters.splice(indexUpVoters, 1);
+    else if (indexDownVoters < 0)
+      downVoters.push(userEmail);
+    else 
+      return;
+
+    await this._setVoters([upVoters, downVoters]);
   }
 }

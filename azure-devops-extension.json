@@ -50,7 +50,7 @@
         "inputs": [
           {
             "id": "Voters",
-            "name": "A hidden Text field to maintain list of voters",
+            "name": "A Text field to maintain list of voters",
             "type": "WorkItemField",
             "properties": {
               "workItemFieldTypes": [
@@ -65,7 +65,7 @@
           },
           {
             "id": "Votes",
-            "name": "A hidden Integer field to maintain the total number of votes",
+            "name": "An Integer field to maintain the total number of votes",
             "type": "WorkItemField",
             "properties": {
               "workItemFieldTypes": [
